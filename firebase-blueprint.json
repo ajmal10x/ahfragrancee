@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Perfume": {
+      "title": "Perfume",
+      "description": "An individual perfume product in the inventory.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the perfume" },
+        "brand": { "type": "string", "description": "Brand of the perfume" },
+        "stock": { "type": "number", "description": "Current quantity in stock" },
+        "price": { "type": "number", "description": "Selling price per unit" },
+        "supplierCost": { "type": "number", "description": "Cost price per unit from supplier" },
+        "category": { "type": "string", "description": "Category (e.g., EDP, EDT, Niche)" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "brand", "stock", "price", "supplierCost"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "A record of stock purchased from a supplier.",
+      "type": "object",
+      "properties": {
+        "perfumeId": { "type": "string", "description": "Reference to the perfume" },
+        "perfumeName": { "type": "string", "description": "Name for display/history" },
+        "quantity": { "type": "number", "description": "Quantity purchased" },
+        "costPerUnit": { "type": "number", "description": "Cost per unit at time of purchase" },
+        "totalCost": { "type": "number", "description": "Total purchase cost" },
+        "supplierName": { "type": "string", "description": "Name of the supplier" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["perfumeId", "quantity", "costPerUnit", "totalCost", "timestamp"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "A record of stock sold to a customer.",
+      "type": "object",
+      "properties": {
+        "perfumeId": { "type": "string", "description": "Reference to the perfume" },
+        "perfumeName": { "type": "string", "description": "Name for display/history" },
+        "quantity": { "type": "number", "description": "Quantity sold" },
+        "pricePerUnit": { "type": "number", "description": "Selling price per unit" },
+        "totalPrice": { "type": "number", "description": "Total sales price" },
+        "customerName": { "type": "string", "description": "Name of the customer (optional)" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["perfumeId", "quantity", "pricePerUnit", "totalPrice", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/perfumes/{perfumeId}": {
+      "schema": "Perfume",
+      "description": "Collection of perfume products."
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "Purchase",
+      "description": "Log of all inventory purchases."
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Log of all inventory sales."
+    }
+  }
+}

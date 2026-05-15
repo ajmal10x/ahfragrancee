@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entities ---
+
+    // Perfume Validation
+    function isValidPerfume(data) {
+      return data.keys().hasAll(['name', 'brand', 'stock', 'price', 'supplierCost']) &&
+             data.name is string && data.name.size() <= 200 &&
+             data.brand is string && data.brand.size() <= 100 &&
+             data.stock is number &&
+             data.price is number && data.price >= 0 &&
+             data.supplierCost is number && data.supplierCost >= 0;
+    }
+
+    match /perfumes/{perfumeId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(perfumeId) && isValidPerfume(incoming());
+      allow update: if isSignedIn() && isValidPerfume(incoming()) && (
+        // Action: Stock update (via purchase/sale) or price edit
+        incoming().diff(existing()).affectedKeys().hasAny(['stock', 'price', 'supplierCost', 'name', 'brand', 'category', 'updatedAt'])
+      );
+      allow delete: if isSignedIn();
+    }
+
+    // Purchase Validation
+    function isValidPurchase(data) {
+      return data.keys().hasAll(['perfumeId', 'quantity', 'costPerUnit', 'totalCost', 'timestamp']) &&
+             isValidId(data.perfumeId) &&
+             data.quantity is number && data.quantity > 0 &&
+             data.costPerUnit is number && data.costPerUnit >= 0 &&
+             data.totalCost is number;
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(purchaseId) && isValidPurchase(incoming());
+      // Purchases are historically immutable
+      allow update, delete: if false;
+    }
+
+    // Sale Validation
+    function isValidSale(data) {
+      return data.keys().hasAll(['perfumeId', 'quantity', 'pricePerUnit', 'totalPrice', 'timestamp']) &&
+             isValidId(data.perfumeId) &&
+             data.quantity is number && data.quantity > 0 &&
+             data.pricePerUnit is number && data.pricePerUnit >= 0 &&
+             data.totalPrice is number;
+    }
+
+    match /sales/{saleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(saleId) && isValidSale(incoming());
+      // Sales are historically immutable
+      allow update, delete: if false;
+    }
+
+    // Test connection doc
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
